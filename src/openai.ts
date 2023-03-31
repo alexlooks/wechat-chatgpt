@@ -6,6 +6,7 @@ import {
 } from "openai";
 import DBUtils from "./data.js";
 import fs from "fs";
+import fetch from 'node-fetch';
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
@@ -21,11 +22,24 @@ async function chatgpt(username:string,message: string): Promise<string> {
   // 先将用户输入的消息添加到数据库中
   DBUtils.addUserMessage(username, message);
   const messages = DBUtils.getChatMessage(username);
+
+
+  const body = {data: messages};
+
+  const rq = await fetch('http://43.154.58.12:8088/search', {
+    method: 'post',
+    body: JSON.stringify(body),
+    headers: {'Content-Type': 'application/json'}
+  });
+  const response = await rq.json();
+
+  /*
   const response = await openai.createChatCompletion({
     model: "gpt-3.5-turbo",
     messages: messages,
     temperature: 0.6
   }).then((res) => res.data).catch((err) => console.log(err));
+  */
   if (response) {
     return (response.choices[0].message as any).content.replace(/^\n+|\n+$/g, "");
   } else {
